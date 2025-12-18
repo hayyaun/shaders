@@ -3,6 +3,7 @@
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Text } from '@react-three/drei';
 import { ShaderMaterial } from './ShaderMaterial';
+import { WaterRippleScene } from './WaterRippleScene';
 import type { ShaderConfig } from '@/lib/types';
 import { useMemo } from 'react';
 
@@ -30,19 +31,29 @@ function FullscreenPlane({ shader, uniformValues, materialKey }: { shader: Shade
 }
 
 export function ShaderScene({ shader, controls = true, uniformValues, shaderKey }: ShaderSceneProps) {
+  // Safety check
+  if (!shader) {
+    return null;
+  }
+  
+  // Use special WaterRippleScene for water ripple shader
+  if (shaderKey === 'Water Ripple') {
+    return (
+      <Canvas
+        camera={{ position: [0, 0, 1], fov: 75 }}
+        style={{ width: '100%', height: '100%' }}
+      >
+        <WaterRippleScene uniformValues={uniformValues} />
+      </Canvas>
+    );
+  }
+  
   // Create a stable key for the material based on shader identity
   const materialKey = useMemo(() => {
     if (shaderKey) return shaderKey;
     if (shader.vertexShader) return shader.vertexShader.slice(0, 50);
     return 'default-shader';
   }, [shaderKey, shader.vertexShader]);
-  
-  // Safety check
-  if (!shader) {
-    return null;
-  }
-  
-  const showWowText = shaderKey === 'Water Ripple';
 
   return (
     <Canvas
@@ -51,17 +62,6 @@ export function ShaderScene({ shader, controls = true, uniformValues, shaderKey 
     >
       <ambientLight intensity={0.5} />
       <FullscreenPlane shader={shader} uniformValues={uniformValues} materialKey={materialKey} />
-      {showWowText && (
-        <Text
-          position={[0, 0, 0]}
-          fontSize={0.5}
-          color="white"
-          anchorX="center"
-          anchorY="middle"
-        >
-          WOW
-        </Text>
-      )}
       {controls && <OrbitControls enableZoom={false} enablePan={false} />}
     </Canvas>
   );

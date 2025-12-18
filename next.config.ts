@@ -3,23 +3,38 @@ import path from "path";
 
 const nextConfig: NextConfig = {
   webpack: (config, { isServer }) => {
-    // Add GLSL loader - webpack applies loaders from right to left
-    // Order: raw-loader (last) -> glslify-loader -> glslin-loader (first)
-    // Insert at the beginning to ensure it's processed before other rules
-    config.module.rules.unshift({
+    // Find the existing oneOf rule - Next.js uses oneOf rules
+    const oneOfRule = config.module.rules.find(
+      (rule: any) => rule.oneOf
+    ) as any;
+
+    // Resolve loader paths
+    const rawLoader = require.resolve("raw-loader");
+    const glslifyLoader = require.resolve("glslify-loader");
+    const glslinLoader = require.resolve("glslin-loader");
+
+    const glslRule = {
       test: /\.(glsl|vs|fs|vert|frag)$/,
       exclude: /node_modules/,
       use: [
-        "raw-loader",
-        "glslify-loader",
+        rawLoader,
+        glslifyLoader,
         {
-          loader: "glslin-loader",
+          loader: glslinLoader,
           options: {
             root: path.resolve(__dirname, "lib/shaders/utils"),
           },
         },
       ],
-    });
+    };
+
+    if (oneOfRule) {
+      // Insert our GLSL rule at the beginning of oneOf array
+      oneOfRule.oneOf.unshift(glslRule);
+    } else {
+      // Fallback: add as a regular rule if oneOf doesn't exist
+      config.module.rules.unshift(glslRule);
+    }
 
     return config;
   },

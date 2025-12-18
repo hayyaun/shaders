@@ -2,17 +2,24 @@
 
 import { useControls, Leva } from 'leva';
 import { ShaderScene } from '@/components/ShaderScene';
-import { gradientFogShader, plasmaShader } from '@/lib/shaders';
+import { gradientFogShader, plasmaShader, auroraShader, starGlitterShader, waterSplashShader } from '@/lib/shaders';
 import { useRef, useEffect } from 'react';
 import { useShaderStore } from '@/lib/store/shaderStore';
 import { usePlasmaControls } from '@/hooks/usePlasmaControls';
 import { useGradientControls } from '@/hooks/useGradientControls';
+import { useAuroraControls } from '@/hooks/useAuroraControls';
+import { useStarGlitterControls } from '@/hooks/useStarGlitterControls';
+import { useWaterSplashControls } from '@/hooks/useWaterSplashControls';
+import { useMousePosition } from '@/hooks/useMousePosition';
 
 import type { ShaderConfig } from '@/lib/types';
 
 const shaders: Record<string, ShaderConfig> = {
   'Gradient Fog': gradientFogShader,
   'Plasma': plasmaShader,
+  'Aurora': auroraShader,
+  'Star Glitter': starGlitterShader,
+  'Water Splash': waterSplashShader,
 };
 
 export default function Home() {
@@ -43,15 +50,31 @@ export default function Home() {
     },
   });
 
-  // Always call both hooks (React rules), but only use the active one's values
+  // Mouse position tracking (only needed for Water Splash, but always call for consistency)
+  const mousePos = useMousePosition();
+  
+  // Always call all hooks (React rules), but only use the active one's values
   const plasmaUniforms = usePlasmaControls({ isActive: currentShaderName === 'Plasma' });
   const gradientUniforms = useGradientControls({ isActive: currentShaderName === 'Gradient Fog' });
+  const auroraUniforms = useAuroraControls({ isActive: currentShaderName === 'Aurora' });
+  const starGlitterUniforms = useStarGlitterControls({ isActive: currentShaderName === 'Star Glitter' });
+  const waterSplashUniforms = useWaterSplashControls({ isActive: currentShaderName === 'Water Splash' });
   
   const uniformValues = currentShaderName === 'Plasma' 
     ? plasmaUniforms 
     : currentShaderName === 'Gradient Fog' 
       ? gradientUniforms 
-      : {};
+      : currentShaderName === 'Aurora'
+        ? auroraUniforms
+        : currentShaderName === 'Star Glitter'
+          ? starGlitterUniforms
+          : currentShaderName === 'Water Splash'
+            ? { 
+                ...waterSplashUniforms, 
+                uMousePositions: mousePos.flat(), // Flatten array of [x, y] pairs
+                uMouseCount: mousePos.length
+              }
+            : {};
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-black">

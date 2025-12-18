@@ -72,40 +72,29 @@ void main() {
   float colorShift2 = cos(t2 * 1.1) * 0.5 + 0.5;
   float colorShift3 = sin(t3 * 0.6) * 0.5 + 0.5;
   
-  // Weird color combinations that change over time
-  vec3 weirdColor1 = vec3(
-    0.3 + sin(t1) * 0.3,
-    0.1 + cos(t2) * 0.4,
-    0.7 + sin(t3) * 0.2
+  // Use the color uniforms as the primary colors
+  // Add subtle variation to make them dynamic while keeping the base colors prominent
+  vec3 color1 = uColor1 * (1.0 + vec3(sin(t1) * 0.15, cos(t2) * 0.15, sin(t3) * 0.15));
+  vec3 color2 = uColor2 * (1.0 + vec3(cos(t2) * 0.15, sin(t1) * 0.15, cos(t3) * 0.15));
+  vec3 color3 = uColor3 * (1.0 + vec3(sin(t3) * 0.15, cos(t1) * 0.15, sin(t2) * 0.15));
+  
+  // Clamp colors to valid range
+  color1 = clamp(color1, 0.0, 1.0);
+  color2 = clamp(color2, 0.0, 1.0);
+  color3 = clamp(color3, 0.0, 1.0);
+  
+  // Mix colors based on multiple factors using the uniform colors as primary
+  vec3 color = mix(color1, color2, gradient);
+  color = mix(color, color3, gradient * colorShift1);
+  
+  // Add subtle random variation for extra chaos (but keep it minimal)
+  vec3 randomVariation = vec3(
+    hash(floor(t * 0.2)) * 0.1,
+    hash(floor(t * 0.3)) * 0.1,
+    hash(floor(t * 0.25)) * 0.1
   );
-  
-  vec3 weirdColor2 = vec3(
-    0.8 + cos(t2) * 0.15,
-    0.2 + sin(t1) * 0.3,
-    0.4 + cos(t3) * 0.25
-  );
-  
-  vec3 weirdColor3 = vec3(
-    0.1 + sin(t3) * 0.2,
-    0.6 + cos(t1) * 0.3,
-    0.3 + sin(t2) * 0.4
-  );
-  
-  vec3 weirdColor4 = vec3(
-    0.5 + hash(floor(t * 0.2)) * 0.4,
-    0.3 + hash(floor(t * 0.3)) * 0.5,
-    0.7 + hash(floor(t * 0.25)) * 0.3
-  );
-  
-  // Mix colors based on multiple factors
-  vec3 color = mix(weirdColor1, weirdColor2, gradient);
-  color = mix(color, weirdColor3, gradient * colorShift1);
-  color = mix(color, weirdColor4, n * colorShift2);
-  
-  // Add base colors with varying intensity
-  color = mix(color, uColor1, sin(t1) * 0.2 + 0.1);
-  color = mix(color, uColor2, cos(t2) * 0.15 + 0.1);
-  color = mix(color, uColor3, sin(t3) * 0.2 + 0.1);
+  color = mix(color, color + randomVariation, n * colorShift2 * 0.2);
+  color = clamp(color, 0.0, 1.0);
   
   // Add random sparkles and flashes
   float sparkle = step(0.98, hash(uv * 50.0 + floor(t * 10.0)));

@@ -43,6 +43,7 @@ export default function Home() {
     },
   });
 
+  // Always call both hooks (React rules), but only use the active one's values
   const plasmaUniforms = usePlasmaControls({ isActive: currentShaderName === 'Plasma' });
   const gradientUniforms = useGradientControls({ isActive: currentShaderName === 'Gradient Fog' });
   
@@ -54,7 +55,7 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-black">
-      <Leva collapsed={false} />
+      <Leva key={currentShaderName} collapsed={false} />
       <main className="w-full h-screen">
         <div className="absolute top-4 left-4 z-10 text-white pointer-events-none">
           <h1 className="text-2xl font-bold mb-2">Shader Library</h1>

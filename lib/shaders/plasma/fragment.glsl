@@ -2,6 +2,9 @@ uniform float uTime;
 uniform vec2 uResolution;
 uniform float uSpeed;
 uniform float uScale;
+uniform vec3 uColor1;
+uniform vec3 uColor2;
+uniform vec3 uColor3;
 
 varying vec2 vUv;
 
@@ -29,12 +32,18 @@ void main() {
   // Normalize and create color
   v = v * 0.5 + 0.5;
   
-  // Create colorful plasma with RGB channels offset
-  float r = sin(v * 3.14159) * 0.5 + 0.5;
-  float g = sin(v * 3.14159 + 2.094) * 0.5 + 0.5;
-  float b = sin(v * 3.14159 + 4.189) * 0.5;
-  
-  vec3 color = vec3(r, g, b);
+  // Create a three-color gradient that cycles through all colors
+  // Map v (0-1) to three segments: 0-0.5 (color1 to color2), 0.5-1.0 (color2 to color3)
+  vec3 color;
+  if (v < 0.5) {
+    // First half: blend from color1 to color2
+    float t = v * 2.0; // Map 0-0.5 to 0-1
+    color = mix(uColor1, uColor2, t);
+  } else {
+    // Second half: blend from color2 to color3
+    float t = (v - 0.5) * 2.0; // Map 0.5-1.0 to 0-1
+    color = mix(uColor2, uColor3, t);
+  }
   
   gl_FragColor = vec4(color, 1.0);
 }

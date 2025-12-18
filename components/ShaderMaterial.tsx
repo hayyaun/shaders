@@ -50,11 +50,12 @@ export function ShaderMaterial({ shader, uniformValues, ...props }: ShaderMateri
         materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
       }
       
-      // Update resolution uniform
+      // Update resolution uniform - use actual canvas dimensions
       if (materialRef.current.uniforms.uResolution) {
+        const canvas = state.gl.domElement;
         materialRef.current.uniforms.uResolution.value = [
-          state.size.width,
-          state.size.height,
+          canvas.clientWidth,
+          canvas.clientHeight,
         ];
       }
     }

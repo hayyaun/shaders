@@ -10,7 +10,10 @@ varying vec2 vUv;
 #include "noise.glsl"
 
 void main() {
+  // Adjust UV coordinates to account for aspect ratio
+  float aspect = uResolution.x / uResolution.y;
   vec2 uv = vUv;
+  uv.x = (uv.x - 0.5) * aspect + 0.5;
   
   float t = uTime;
   vec2 center = vec2(0.5, 0.5);

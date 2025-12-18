@@ -3,14 +3,15 @@
 import { useControls, Leva } from 'leva';
 import { ShaderScene } from '@/components/ShaderScene';
 import { gradientFogShader, plasmaShader, auroraShader, starGlitterShader, waterSplashShader } from '@/lib/shaders';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useShaderStore } from '@/lib/store/shaderStore';
 import { usePlasmaControls } from '@/hooks/usePlasmaControls';
 import { useGradientControls } from '@/hooks/useGradientControls';
 import { useAuroraControls } from '@/hooks/useAuroraControls';
 import { useStarGlitterControls } from '@/hooks/useStarGlitterControls';
 import { useWaterSplashControls } from '@/hooks/useWaterSplashControls';
-import { useMousePosition } from '@/hooks/useMousePosition';
+import { WaterSplashCanvas, WaterSplashCanvasRef } from '@/components/WaterSplashCanvas';
+import { CanvasTexture } from 'three';
 
 import type { ShaderConfig } from '@/lib/types';
 
@@ -26,6 +27,8 @@ export default function Home() {
   const { selectedShader, setSelectedShader } = useShaderStore();
   const isInitialMount = useRef(true);
   const previousShaderRef = useRef<string | null>(null);
+  const canvasRef = useRef<WaterSplashCanvasRef>(null);
+  const [canvasTexture, setCanvasTexture] = useState<CanvasTexture | null>(null);
   
   const shaderNames = Object.keys(shaders);
   const currentShaderName = (selectedShader && shaders[selectedShader]) ? selectedShader : shaderNames[0];
@@ -50,8 +53,40 @@ export default function Home() {
     },
   });
 
-  // Mouse position tracking (only needed for Water Splash, but always call for consistency)
-  const mousePos = useMousePosition();
+  // Create texture from canvas
+  useEffect(() => {
+    if (currentShaderName !== 'Water Splash') {
+      return;
+    }
+
+    const createTexture = () => {
+      const canvas = canvasRef.current?.getCanvas();
+      if (canvas && canvas.width > 0 && canvas.height > 0) {
+        setCanvasTexture(prev => {
+          if (prev) {
+            prev.dispose();
+          }
+          const texture = new CanvasTexture(canvas);
+          texture.needsUpdate = true;
+          return texture;
+        });
+      } else {
+        // Retry if canvas not ready
+        setTimeout(createTexture, 50);
+      }
+    };
+
+    createTexture();
+  }, [currentShaderName]);
+
+  // Cleanup texture when switching away from Water Splash
+  useEffect(() => {
+    return () => {
+      if (canvasTexture) {
+        canvasTexture.dispose();
+      }
+    };
+  }, [canvasTexture]);
   
   // Always call all hooks (React rules), but only use the active one's values
   const plasmaUniforms = usePlasmaControls({ isActive: currentShaderName === 'Plasma' });
@@ -71,10 +106,7 @@ export default function Home() {
           : currentShaderName === 'Water Splash'
             ? { 
                 ...waterSplashUniforms, 
-                uMousePositions: mousePos.positions.flat(), // Flatten array of [x, y] pairs
-                uMouseSpeeds: mousePos.speeds, // Array of speeds, one per point
-                uMouseCount: mousePos.positions.length,
-                uMouseSpeed: mousePos.speed
+                uCanvasTexture: canvasTexture || waterSplashShader.uniforms.uCanvasTexture.value
               }
             : {};
 
@@ -89,6 +121,7 @@ export default function Home() {
           </p>
         </div>
         <ShaderScene shader={selectedShaderConfig} uniformValues={uniformValues} shaderKey={currentShaderName} />
+        {currentShaderName === 'Water Splash' && <WaterSplashCanvas ref={canvasRef} />}
       </main>
     </div>
   );

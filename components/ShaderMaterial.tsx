@@ -58,6 +58,14 @@ export function ShaderMaterial({ shader, uniformValues, ...props }: ShaderMateri
           canvas.clientHeight,
         ];
       }
+      
+      // Update canvas texture if it exists - FORCE UPDATE EVERY FRAME
+      if (materialRef.current.uniforms.uCanvasTexture) {
+        const texture = materialRef.current.uniforms.uCanvasTexture.value;
+        if (texture && texture.isCanvasTexture) {
+          texture.needsUpdate = true;
+        }
+      }
     }
   });
 

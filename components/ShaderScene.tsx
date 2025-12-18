@@ -1,6 +1,6 @@
 'use client';
 
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { ShaderMaterial } from './ShaderMaterial';
 import type { ShaderConfig } from '@/lib/types';
@@ -11,6 +11,22 @@ interface ShaderSceneProps {
   controls?: boolean;
   uniformValues?: Record<string, unknown>;
   shaderKey?: string;
+}
+
+function FullscreenPlane({ shader, uniformValues, materialKey }: { shader: ShaderConfig; uniformValues?: Record<string, unknown>; materialKey: string }) {
+  const { viewport } = useThree();
+  
+  // Use viewport dimensions to fill the entire screen
+  // viewport gives us world-space dimensions that match the camera frustum
+  // Use a key based on viewport dimensions to force geometry recreation on resize
+  const geometryKey = `${viewport.width.toFixed(2)}-${viewport.height.toFixed(2)}`;
+  
+  return (
+    <mesh>
+      <planeGeometry key={geometryKey} args={[viewport.width, viewport.height, 32, 32]} />
+      <ShaderMaterial key={materialKey} shader={shader} uniformValues={uniformValues} />
+    </mesh>
+  );
 }
 
 export function ShaderScene({ shader, controls = true, uniformValues, shaderKey }: ShaderSceneProps) {
@@ -32,10 +48,7 @@ export function ShaderScene({ shader, controls = true, uniformValues, shaderKey 
       style={{ width: '100%', height: '100%' }}
     >
       <ambientLight intensity={0.5} />
-      <mesh>
-        <planeGeometry args={[2, 2, 32, 32]} />
-        <ShaderMaterial key={materialKey} shader={shader} uniformValues={uniformValues} />
-      </mesh>
+      <FullscreenPlane shader={shader} uniformValues={uniformValues} materialKey={materialKey} />
       {controls && <OrbitControls enableZoom={false} enablePan={false} />}
     </Canvas>
   );

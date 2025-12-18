@@ -11,7 +11,7 @@ import { useAuroraControls } from '@/hooks/useAuroraControls';
 import { useStarGlitterControls } from '@/hooks/useStarGlitterControls';
 import { useWaterSplashControls } from '@/hooks/useWaterSplashControls';
 import { WaterSplashCanvas, WaterSplashCanvasRef } from '@/components/WaterSplashCanvas';
-import { CanvasTexture } from 'three';
+import { CanvasTexture, RGBAFormat } from 'three';
 
 import type { ShaderConfig } from '@/lib/types';
 
@@ -67,6 +67,8 @@ export default function Home() {
             prev.dispose();
           }
           const texture = new CanvasTexture(canvas);
+          // Ensure texture reads alpha channel from canvas
+          texture.format = RGBAFormat;
           texture.needsUpdate = true;
           return texture;
         });

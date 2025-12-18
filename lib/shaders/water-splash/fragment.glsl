@@ -12,10 +12,12 @@ varying vec2 vUv;
 #include "noise.glsl"
 
 void main() {
-  // Sample canvas texture directly - NO FLIP, just use UV as-is
+  // Sample canvas texture directly
   vec4 canvasSample = texture2D(uCanvasTexture, vUv);
   
-  // Show canvas directly
-  gl_FragColor = canvasSample;
+  // Use alpha channel - multiply RGB by alpha to show fading
+  vec3 color = canvasSample.rgb * (canvasSample.a - 0.1);
+  
+  gl_FragColor = vec4(color, canvasSample.a);
 }
 

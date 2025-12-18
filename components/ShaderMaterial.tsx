@@ -63,6 +63,8 @@ export function ShaderMaterial({ shader, uniformValues, ...props }: ShaderMateri
       if (materialRef.current.uniforms.uCanvasTexture) {
         const texture = materialRef.current.uniforms.uCanvasTexture.value;
         if (texture && texture.isCanvasTexture) {
+          // Force texture to update from canvas every frame
+          // CanvasTexture automatically reads from the canvas when needsUpdate is true
           texture.needsUpdate = true;
         }
       }

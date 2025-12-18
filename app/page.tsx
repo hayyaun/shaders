@@ -66,7 +66,7 @@ export default function Home() {
       };
     }
     return {};
-  }, [currentShaderName, controls]);
+  }, [currentShaderName, controls['Plasma - Speed'], controls['Plasma - Scale']]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-black">

@@ -14,8 +14,7 @@ interface ShaderMaterialProps {
 export function ShaderMaterial({ shader, uniformValues, ...props }: ShaderMaterialProps) {
   const materialRef = useRef<ThreeShaderMaterial>(null);
 
-  // Create a fresh uniforms object that merges shader uniforms with custom values
-  // Deep clone uniforms to ensure each shader gets its own uniform objects
+  // Create a stable uniforms object - only recreate when shader code changes
   const uniforms = useMemo(() => {
     const merged: Record<string, { value: any }> = {};
     // Deep clone all uniforms from shader config
@@ -28,25 +27,19 @@ export function ShaderMaterial({ shader, uniformValues, ...props }: ShaderMateri
         merged[key] = { value: uniformValue };
       }
     });
-    // Apply custom uniform values
-    if (uniformValues) {
-      Object.keys(uniformValues).forEach((key) => {
-        if (merged[key]) {
-          merged[key].value = uniformValues[key];
-        }
-      });
-    }
     return merged;
-  }, [shader.vertexShader, shader.fragmentShader, uniformValues]);
+  }, [shader.vertexShader, shader.fragmentShader]);
 
-  // Update uniforms when they change
+  // Update custom uniform values when they change (don't recreate uniforms object)
   useEffect(() => {
-    if (materialRef.current && uniformValues) {
-      Object.keys(uniformValues).forEach((key) => {
-        if (materialRef.current?.uniforms[key]) {
-          materialRef.current.uniforms[key].value = uniformValues[key];
-        }
-      });
+    if (materialRef.current) {
+      if (uniformValues) {
+        Object.keys(uniformValues).forEach((key) => {
+          if (materialRef.current?.uniforms[key]) {
+            materialRef.current.uniforms[key].value = uniformValues[key];
+          }
+        });
+      }
     }
   }, [uniformValues]);
 

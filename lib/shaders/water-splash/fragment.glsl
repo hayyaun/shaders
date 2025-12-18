@@ -37,11 +37,14 @@ void main() {
   for (int i = 0; i < 99; i++) {
     if (i + 1 >= uMouseCount) break;
     
-    // Get two consecutive points
+    // Get two consecutive points and transform to aspect-corrected space
     int idx1 = i * 2;
     int idx2 = (i + 1) * 2;
     vec2 point1 = vec2(uMousePositions[idx1], uMousePositions[idx1 + 1]);
     vec2 point2 = vec2(uMousePositions[idx2], uMousePositions[idx2 + 1]);
+    // Transform x coordinates to match aspect-corrected UV space
+    point1.x = (point1.x - 0.5) * aspect + 0.5;
+    point2.x = (point2.x - 0.5) * aspect + 0.5;
     
     // Calculate segment vector and length
     vec2 segment = point2 - point1;

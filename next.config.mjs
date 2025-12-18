@@ -1,8 +1,13 @@
-import type { NextConfig } from "next";
 import path from "path";
+import url from "url";
 
-const nextConfig: NextConfig = {
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   webpack: (config) => {
+    // shader support - matching working portfolio config
     config.module.rules.push({
       test: /\.(glsl|vs|fs|vert|frag)$/,
       exclude: /node_modules/,
@@ -25,3 +30,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+

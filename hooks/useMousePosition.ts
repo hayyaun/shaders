@@ -1,37 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 
 const MAX_POSITIONS = 100;
-const TIME_STEP = 0.016; // ~60fps
+const FRAME_TIME = 1.0 / 60.0; // ~60fps
 
 export function useMousePosition() {
   const [mousePositions, setMousePositions] = useState<Array<[number, number]>>([[0.5, 0.5]]);
-  const lastUpdateTime = useRef<number>(Date.now());
+  const [mouseSpeed, setMouseSpeed] = useState<number>(0.0);
+  const currentMousePosRef = useRef<[number, number]>([0.5, 0.5]);
+  const previousMousePosRef = useRef<[number, number]>([0.5, 0.5]);
+  const smoothedSpeedRef = useRef<number>(0.0);
+  const animationFrameRef = useRef<number>();
+  const lastFrameTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
+    // Update current mouse position on mousemove (don't append to array, just update ref)
     const handleMouseMove = (e: MouseEvent) => {
-      const now = Date.now();
-      const dt = (now - lastUpdateTime.current) / 1000.0; // Convert to seconds
-      
-      // Only update if enough time has passed (throttle)
-      if (dt < TIME_STEP * 0.5) {
-        return;
-      }
-      
       // Convert mouse position to normalized coordinates (0-1 range)
       const x = e.clientX / window.innerWidth;
       const y = 1.0 - (e.clientY / window.innerHeight); // Flip Y axis for GLSL convention
-      
-      setMousePositions((prev) => {
-        // Add new position at the head (index 0)
-        const newPositions = [[x, y], ...prev];
-        // Remove the last position if we exceed max
-        if (newPositions.length > MAX_POSITIONS) {
-          newPositions.pop();
-        }
-        return newPositions;
-      });
-      
-      lastUpdateTime.current = now;
+      currentMousePosRef.current = [x, y];
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -41,6 +28,51 @@ export function useMousePosition() {
     };
   }, []);
 
-  return mousePositions;
+  useEffect(() => {
+    // Append current mouse position to array on each frame and calculate speed
+    const updatePositions = () => {
+      const now = Date.now();
+      const dt = Math.max((now - lastFrameTimeRef.current) / 1000.0, 0.001); // Prevent division by zero
+      lastFrameTimeRef.current = now;
+      
+      // Calculate mouse speed (distance moved per second)
+      const dx = currentMousePosRef.current[0] - previousMousePosRef.current[0];
+      const dy = currentMousePosRef.current[1] - previousMousePosRef.current[1];
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const instantSpeed = distance / dt;
+      
+      // Exponential smoothing for gradual fade
+      const smoothingFactor = 0.1; // Lower = slower fade
+      smoothedSpeedRef.current = smoothedSpeedRef.current * (1.0 - smoothingFactor) + instantSpeed * smoothingFactor;
+      
+      // Update speed state
+      setMouseSpeed(smoothedSpeedRef.current);
+      
+      // Update previous position
+      previousMousePosRef.current = [...currentMousePosRef.current];
+      
+      setMousePositions((prev) => {
+        // Add current position at the head (index 0)
+        const newPositions = [currentMousePosRef.current, ...prev];
+        // Remove the last position if we exceed max
+        if (newPositions.length > MAX_POSITIONS) {
+          newPositions.pop();
+        }
+        return newPositions;
+      });
+      
+      animationFrameRef.current = requestAnimationFrame(updatePositions);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(updatePositions);
+    
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []); // Empty deps - only run once to start the animation loop
+
+  return { positions: mousePositions, speed: mouseSpeed };
 }
 

@@ -2,6 +2,7 @@ uniform float uTime;
 uniform vec2 uResolution;
 uniform float uMousePositions[200]; // Flattened array: [x0, y0, x1, y1, ...]
 uniform int uMouseCount;
+uniform float uMouseSpeed;
 uniform float uRippleSpeed;
 uniform float uRippleIntensity;
 uniform float uRippleDecay;
@@ -19,6 +20,12 @@ void main() {
   
   // Start with calm black background
   vec3 color = vec3(0.0);
+  
+  // Calculate speed-based intensity multiplier
+  // Normalize speed (typical range 0-10, but can be higher)
+  // Use smoothstep to create a nice curve
+  float speedIntensity = smoothstep(0.0, 5.0, uMouseSpeed);
+  speedIntensity = clamp(speedIntensity, 0.0, 1.0);
   
   // Accumulate effect from all mouse positions in history
   float totalEffect = 0.0;
@@ -71,12 +78,12 @@ void main() {
     // Combine depression and wave
     float effect = depression * 0.4 + wave * 0.8;
     
-    // Apply intensity and add to total
-    totalEffect += effect * uRippleIntensity;
+    // Apply intensity modulated by mouse speed
+    totalEffect += effect * uRippleIntensity * speedIntensity;
   }
   
-  // Add very subtle calm water movement (only when no mouse movement)
-  float calmFactor = 1.0 - smoothstep(0.0, 0.3, float(uMouseCount));
+  // Add very subtle calm water movement (only when mouse is slow/stopped)
+  float calmFactor = 1.0 - speedIntensity;
   vec2 calmUV = uv * 1.5 + vec2(uTime * 0.02, uTime * 0.015);
   float calmNoise = fbm(calmUV) * 0.02;
   calmNoise *= calmFactor;

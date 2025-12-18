@@ -71,8 +71,9 @@ export default function Home() {
           : currentShaderName === 'Water Splash'
             ? { 
                 ...waterSplashUniforms, 
-                uMousePositions: mousePos.flat(), // Flatten array of [x, y] pairs
-                uMouseCount: mousePos.length
+                uMousePositions: mousePos.positions.flat(), // Flatten array of [x, y] pairs
+                uMouseCount: mousePos.positions.length,
+                uMouseSpeed: mousePos.speed
               }
             : {};
 

@@ -15,6 +15,7 @@ export const waterSplashShader = {
     uResolution: { value: [1, 1] },
     uMousePositions: { value: initialMousePositions },
     uMouseCount: { value: 0 },
+    uMouseSpeed: { value: 0.0 },
     uRippleSpeed: { value: 1.0 },
     uRippleIntensity: { value: 0.8 },
     uRippleDecay: { value: 4.0 },

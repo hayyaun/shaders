@@ -72,6 +72,7 @@ export default function Home() {
             ? { 
                 ...waterSplashUniforms, 
                 uMousePositions: mousePos.positions.flat(), // Flatten array of [x, y] pairs
+                uMouseSpeeds: mousePos.speeds, // Array of speeds, one per point
                 uMouseCount: mousePos.positions.length,
                 uMouseSpeed: mousePos.speed
               }

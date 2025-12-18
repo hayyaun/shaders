@@ -7,6 +7,12 @@ for (let i = 0; i < 200; i += 2) {
   initialMousePositions.push(0.5, 0.5);
 }
 
+// Initialize array of mouse speeds (one per point)
+const initialMouseSpeeds: number[] = [];
+for (let i = 0; i < 100; i++) {
+  initialMouseSpeeds.push(0.0);
+}
+
 export const waterSplashShader = {
   vertexShader,
   fragmentShader,
@@ -14,6 +20,7 @@ export const waterSplashShader = {
     uTime: { value: 0 },
     uResolution: { value: [1, 1] },
     uMousePositions: { value: initialMousePositions },
+    uMouseSpeeds: { value: initialMouseSpeeds },
     uMouseCount: { value: 0 },
     uMouseSpeed: { value: 0.0 },
     uRippleSpeed: { value: 1.0 },

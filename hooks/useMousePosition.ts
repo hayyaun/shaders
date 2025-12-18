@@ -5,6 +5,7 @@ const FRAME_TIME = 1.0 / 60.0; // ~60fps
 
 export function useMousePosition() {
   const [mousePositions, setMousePositions] = useState<Array<[number, number]>>([[0.5, 0.5]]);
+  const [mouseSpeeds, setMouseSpeeds] = useState<Array<number>>([0.0]);
   const [mouseSpeed, setMouseSpeed] = useState<number>(0.0);
   const currentMousePosRef = useRef<[number, number]>([0.5, 0.5]);
   const previousMousePosRef = useRef<[number, number]>([0.5, 0.5]);
@@ -51,6 +52,7 @@ export function useMousePosition() {
       // Update previous position
       previousMousePosRef.current = [...currentMousePosRef.current];
       
+      // Update positions and speeds arrays together
       setMousePositions((prev) => {
         // Add current position at the head (index 0)
         const newPositions = [currentMousePosRef.current, ...prev];
@@ -59,6 +61,16 @@ export function useMousePosition() {
           newPositions.pop();
         }
         return newPositions;
+      });
+      
+      setMouseSpeeds((prev) => {
+        // Add current speed at the head (index 0) - use the speed at the time this point was created
+        const newSpeeds = [smoothedSpeedRef.current, ...prev];
+        // Remove the last speed if we exceed max
+        if (newSpeeds.length > MAX_POSITIONS) {
+          newSpeeds.pop();
+        }
+        return newSpeeds;
       });
       
       animationFrameRef.current = requestAnimationFrame(updatePositions);
@@ -73,6 +85,6 @@ export function useMousePosition() {
     };
   }, []); // Empty deps - only run once to start the animation loop
 
-  return { positions: mousePositions, speed: mouseSpeed };
+  return { positions: mousePositions, speeds: mouseSpeeds, speed: mouseSpeed };
 }
 

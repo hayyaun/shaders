@@ -25,6 +25,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
+    "glslify": "^7.1.1",
     "glslify-loader": "^2.0.0",
     "glslin-loader": "^1.1.5",
     "raw-loader": "^4.0.2",

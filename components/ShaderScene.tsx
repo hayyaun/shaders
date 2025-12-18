@@ -9,7 +9,7 @@ import { useMemo } from 'react';
 interface ShaderSceneProps {
   shader: ShaderConfig;
   controls?: boolean;
-  uniformValues?: Record<string, any>;
+  uniformValues?: Record<string, unknown>;
   shaderKey?: string;
 }
 
@@ -17,9 +17,9 @@ export function ShaderScene({ shader, controls = true, uniformValues, shaderKey 
   // Create a stable key for the material based on shader identity
   const materialKey = useMemo(() => {
     if (shaderKey) return shaderKey;
-    if (shader?.vertexShader) return shader.vertexShader.slice(0, 50);
+    if (shader.vertexShader) return shader.vertexShader.slice(0, 50);
     return 'default-shader';
-  }, [shaderKey, shader?.vertexShader]);
+  }, [shaderKey, shader.vertexShader]);
   
   // Safety check
   if (!shader) {

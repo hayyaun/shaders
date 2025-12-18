@@ -10,15 +10,34 @@ export function useMousePosition() {
   const currentMousePosRef = useRef<[number, number]>([0.5, 0.5]);
   const previousMousePosRef = useRef<[number, number]>([0.5, 0.5]);
   const smoothedSpeedRef = useRef<number>(0.0);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
   const lastFrameTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
     // Update current mouse position on mousemove (don't append to array, just update ref)
     const handleMouseMove = (e: MouseEvent) => {
-      // Convert mouse position to normalized coordinates (0-1 range)
-      const x = e.clientX / window.innerWidth;
-      const y = 1.0 - (e.clientY / window.innerHeight); // Flip Y axis for GLSL convention
+      // Find the Canvas element to get its actual size and position
+      const canvas = document.querySelector('canvas');
+      if (!canvas) {
+        // Fallback to window if canvas not found
+        const x = e.clientX / window.innerWidth;
+        const y = 1.0 - (e.clientY / window.innerHeight);
+        currentMousePosRef.current = [x, y];
+        return;
+      }
+      
+      const rect = canvas.getBoundingClientRect();
+      const canvasWidth = rect.width;
+      const canvasHeight = rect.height;
+      
+      // Calculate mouse position relative to canvas
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      // Convert to normalized coordinates (0-1 range)
+      const x = mouseX / canvasWidth;
+      const y = 1.0 - (mouseY / canvasHeight); // Flip Y axis for GLSL convention
+      
       currentMousePosRef.current = [x, y];
     };
 

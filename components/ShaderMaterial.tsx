@@ -7,16 +7,16 @@ import type { ShaderConfig } from '@/lib/types';
 
 interface ShaderMaterialProps {
   shader: ShaderConfig;
-  uniformValues?: Record<string, any>;
-  [key: string]: any;
+  uniformValues?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export function ShaderMaterial({ shader, uniformValues, ...props }: ShaderMaterialProps) {
   const materialRef = useRef<ThreeShaderMaterial>(null);
 
-  // Create a stable uniforms object - only recreate when shader code changes
+  // Create a stable uniforms object - only recreate when shader code or uniforms structure changes
   const uniforms = useMemo(() => {
-    const merged: Record<string, { value: any }> = {};
+    const merged: Record<string, { value: unknown }> = {};
     // Deep clone all uniforms from shader config
     Object.keys(shader.uniforms).forEach((key) => {
       const uniformValue = shader.uniforms[key].value;
@@ -28,7 +28,7 @@ export function ShaderMaterial({ shader, uniformValues, ...props }: ShaderMateri
       }
     });
     return merged;
-  }, [shader.vertexShader, shader.fragmentShader]);
+  }, [shader.uniforms]);
 
   // Update custom uniform values when they change (don't recreate uniforms object)
   useEffect(() => {

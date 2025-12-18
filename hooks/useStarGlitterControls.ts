@@ -50,7 +50,7 @@ export function useStarGlitterControls({ isActive }: UseStarGlitterControlsProps
       },
     },
     {
-      collapsed: !isActive,
+      collapsed: true,
     }
   );
 

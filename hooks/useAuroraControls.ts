@@ -47,7 +47,7 @@ export function useAuroraControls({ isActive }: UseAuroraControlsProps) {
       },
     },
     {
-      collapsed: !isActive,
+      collapsed: true,
     }
   );
 

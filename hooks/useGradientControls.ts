@@ -20,7 +20,7 @@ export function useGradientControls({ isActive }: UseGradientControlsProps) {
       },
     },
     {
-      collapsed: !isActive,
+      collapsed: true,
     }
   );
 

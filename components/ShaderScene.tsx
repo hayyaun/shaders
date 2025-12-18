@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Text } from '@react-three/drei';
 import { ShaderMaterial } from './ShaderMaterial';
 import type { ShaderConfig } from '@/lib/types';
 import { useMemo } from 'react';
@@ -42,6 +42,8 @@ export function ShaderScene({ shader, controls = true, uniformValues, shaderKey 
     return null;
   }
   
+  const showWowText = shaderKey === 'Water Ripple';
+
   return (
     <Canvas
       camera={{ position: [0, 0, 1], fov: 75 }}
@@ -49,6 +51,17 @@ export function ShaderScene({ shader, controls = true, uniformValues, shaderKey 
     >
       <ambientLight intensity={0.5} />
       <FullscreenPlane shader={shader} uniformValues={uniformValues} materialKey={materialKey} />
+      {showWowText && (
+        <Text
+          position={[0, 0, 0]}
+          fontSize={0.5}
+          color="white"
+          anchorX="center"
+          anchorY="middle"
+        >
+          WOW
+        </Text>
+      )}
       {controls && <OrbitControls enableZoom={false} enablePan={false} />}
     </Canvas>
   );

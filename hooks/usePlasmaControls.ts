@@ -32,7 +32,7 @@ export function usePlasmaControls({ isActive }: UsePlasmaControlsProps) {
       },
     },
     {
-      collapsed: !isActive,
+      collapsed: true,
     }
   );
 

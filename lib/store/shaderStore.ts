@@ -6,12 +6,12 @@ interface ShaderStore {
   setSelectedShader: (shader: string) => void;
 }
 
-const VALID_SHADERS = ['Gradient', 'Plasma'];
+const VALID_SHADERS = ['Gradient Fog', 'Plasma'];
 
 export const useShaderStore = create<ShaderStore>()(
   persist(
     (set) => ({
-      selectedShader: 'Gradient',
+      selectedShader: 'Gradient Fog',
       setSelectedShader: (shader: string) => {
         // Validate and set shader
         if (VALID_SHADERS.includes(shader)) {
@@ -25,7 +25,7 @@ export const useShaderStore = create<ShaderStore>()(
       onRehydrateStorage: () => {
         return (state) => {
           if (state && state.selectedShader && !VALID_SHADERS.includes(state.selectedShader)) {
-            state.selectedShader = 'Gradient';
+            state.selectedShader = 'Gradient Fog';
           }
         };
       },

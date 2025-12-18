@@ -1,7 +1,7 @@
 import vertexShader from './vertex.glsl';
 import fragmentShader from './fragment.glsl';
 
-export const exampleGradientShader = {
+export const gradientFogShader = {
   vertexShader,
   fragmentShader,
   uniforms: {

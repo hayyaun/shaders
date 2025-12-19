@@ -2,7 +2,8 @@
 
 import { useFrame, useThree } from '@react-three/fiber';
 import { useRef, useMemo, useEffect } from 'react';
-import { WebGLRenderTarget, ShaderMaterial as ThreeShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Scene, OrthographicCamera, Mesh, PlaneGeometry } from 'three';
+import { WebGLRenderTarget, ShaderMaterial as ThreeShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Scene, OrthographicCamera, Mesh, PlaneGeometry, Group } from 'three';
+import { Text } from '@react-three/drei';
 import { ShaderMaterial } from './ShaderMaterial';
 import type { ShaderConfig } from '@/lib/types';
 import simulationShaderSource from '@/lib/shaders/water-ripple/simulation.glsl';
@@ -13,18 +14,41 @@ interface WaterRippleSceneProps {
   uniformValues?: Record<string, unknown>;
 }
 
+// Background component for "wow" text
+function BackgroundText() {
+  return (
+    <>
+      <ambientLight intensity={1.0} />
+      <Text
+        position={[0, 0, 0]}
+        fontSize={2}
+        color="#1e40af"
+        anchorX="center"
+        anchorY="middle"
+      >
+        wow
+      </Text>
+    </>
+  );
+}
+
 function WaterRipplePlane({ uniformValues }: WaterRippleSceneProps) {
-  const { viewport, gl, size } = useThree();
+  const { viewport, gl, size, camera } = useThree();
   const renderMaterialRef = useRef<ThreeShaderMaterial>(null);
   const frameCountRef = useRef(0);
   const mouseRef = useRef({ x: 0, y: 0, pressed: false });
+  const backgroundGroupRef = useRef<Group>(null);
+  
+  // Use refs for mutable values that are used in useFrame
+  const renderTargetsRef = useRef<{ rt1: WebGLRenderTarget; rt2: WebGLRenderTarget; current: WebGLRenderTarget; previous: WebGLRenderTarget; initialTexture: DataTexture; backgroundRT: WebGLRenderTarget } | null>(null);
+  const simulationMaterialRef = useRef<ThreeShaderMaterial | null>(null);
   
   // Create separate scene and camera for simulation pass
   const simulationSceneRef = useRef<Scene | null>(null);
   const simulationCameraRef = useRef<OrthographicCamera | null>(null);
   const simulationMeshRef = useRef<Mesh | null>(null);
 
-  // Create render targets for ping-pong buffering
+  // Create render targets for ping-pong buffering and background
   const renderTargets = useMemo(() => {
     const width = Math.max(1, Math.floor(size.width * window.devicePixelRatio));
     const height = Math.max(1, Math.floor(size.height * window.devicePixelRatio));
@@ -48,11 +72,11 @@ function WaterRipplePlane({ uniformValues }: WaterRippleSceneProps) {
       magFilter: NearestFilter,
     });
     
-    // Initialize both render targets with the initial texture
-    const gl = document.createElement('canvas').getContext('webgl');
-    if (gl) {
-      // We'll initialize them properly in useFrame
-    }
+    // Render target for background scene (with "wow" text)
+    const backgroundRT = new WebGLRenderTarget(width, height, {
+      format: RGBAFormat,
+      type: FloatType,
+    });
     
     // Create simulation scene
     const simScene = new Scene();
@@ -61,16 +85,32 @@ function WaterRipplePlane({ uniformValues }: WaterRippleSceneProps) {
     const simMesh = new Mesh(simGeometry);
     simScene.add(simMesh);
     
-    simulationSceneRef.current = simScene;
-    simulationCameraRef.current = simCamera;
-    simulationMeshRef.current = simMesh;
-    
-    return { rt1, rt2, current: rt1, previous: rt2, initialTexture };
+    return { 
+      rt1, 
+      rt2, 
+      current: rt1, 
+      previous: rt2, 
+      initialTexture, 
+      backgroundRT,
+      simScene,
+      simCamera,
+      simMesh,
+    };
   }, [size.width, size.height]);
+
+  // Set up refs after render targets are created
+  useEffect(() => {
+    if (renderTargets) {
+      simulationSceneRef.current = renderTargets.simScene;
+      simulationCameraRef.current = renderTargets.simCamera;
+      simulationMeshRef.current = renderTargets.simMesh;
+      renderTargetsRef.current = renderTargets;
+    }
+  }, [renderTargets]);
 
   // Create simulation material directly (not through React component)
   const simulationMaterial = useMemo(() => {
-    const material = new ThreeShaderMaterial({
+    return new ThreeShaderMaterial({
       vertexShader: vertexShaderSource,
       fragmentShader: simulationShaderSource,
       uniforms: {
@@ -82,46 +122,36 @@ function WaterRipplePlane({ uniformValues }: WaterRippleSceneProps) {
         uFrame: { value: 0 },
       },
     });
-    return material;
   }, [size.width, size.height]);
+
+  // Set simulation material ref
+  useEffect(() => {
+    simulationMaterialRef.current = simulationMaterial;
+  }, [simulationMaterial]);
 
   // Cleanup render targets on unmount
   useEffect(() => {
     return () => {
-      renderTargets.rt1.dispose();
-      renderTargets.rt2.dispose();
-      simulationMaterial.dispose();
+      if (renderTargetsRef.current) {
+        renderTargetsRef.current.rt1.dispose();
+        renderTargetsRef.current.rt2.dispose();
+        renderTargetsRef.current.backgroundRT.dispose();
+      }
+      if (simulationMaterialRef.current) {
+        simulationMaterialRef.current.dispose();
+      }
     };
-  }, [renderTargets, simulationMaterial]);
+  }, []);
 
   // Create render shader config
   const renderShader: ShaderConfig = useMemo(() => {
-    // Create a simple gradient background texture
-    const width = 256;
-    const height = 256;
-    const data = new Uint8Array(width * height * 4);
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const idx = (y * width + x) * 4;
-        const u = x / width;
-        const v = y / height;
-        // Simple gradient from blue to cyan
-        data[idx] = Math.floor(u * 50); // R
-        data[idx + 1] = Math.floor(100 + v * 100); // G
-        data[idx + 2] = Math.floor(150 + u * 50); // B
-        data[idx + 3] = 255; // A
-      }
-    }
-    const backgroundTexture = new DataTexture(data, width, height, RGBAFormat);
-    backgroundTexture.needsUpdate = true;
-
     return {
       vertexShader: vertexShaderSource,
       fragmentShader: renderShaderSource,
       uniforms: {
         uResolution: { value: [size.width, size.height] },
         uSimulationState: { value: null },
-        uBackgroundTexture: { value: backgroundTexture },
+        uBackgroundTexture: { value: null }, // Will be set in useFrame
       },
     };
   }, [size.width, size.height]);
@@ -154,27 +184,41 @@ function WaterRipplePlane({ uniformValues }: WaterRippleSceneProps) {
 
   // Set simulation material on mesh and initialize render material
   useEffect(() => {
-    if (simulationMeshRef.current && simulationMaterial) {
-      simulationMeshRef.current.material = simulationMaterial;
+    if (simulationMeshRef.current && simulationMaterialRef.current) {
+      simulationMeshRef.current.material = simulationMaterialRef.current;
     }
     // Initialize render material with initial texture
-    if (renderMaterialRef.current) {
-      renderMaterialRef.current.uniforms.uSimulationState.value = renderTargets.initialTexture;
+    if (renderMaterialRef.current && renderTargetsRef.current) {
+      renderMaterialRef.current.uniforms.uSimulationState.value = renderTargetsRef.current.initialTexture;
     }
-  }, [simulationMaterial, renderTargets]);
+  }, []);
 
   // Update simulation and swap buffers
   useFrame((state) => {
+    const renderTargets = renderTargetsRef.current;
+    const simulationMaterial = simulationMaterialRef.current;
+    
     if (!simulationMaterial || !renderMaterialRef.current || !simulationSceneRef.current || !simulationCameraRef.current || !simulationMeshRef.current) return;
+    if (!backgroundGroupRef.current || !renderTargets) return;
 
     frameCountRef.current += 1;
+
+    // Render background scene (with "wow" text) to background render target
+    // Create a temporary scene with just the background group
+    const tempScene = new Scene();
+    tempScene.add(backgroundGroupRef.current.clone());
+    
+    gl.setRenderTarget(renderTargets.backgroundRT);
+    gl.clear();
+    gl.render(tempScene, camera);
+    
+    const pixelWidth = size.width * window.devicePixelRatio;
+    const pixelHeight = size.height * window.devicePixelRatio;
 
     // Update simulation uniforms
     const simUniforms = simulationMaterial.uniforms;
     simUniforms.uTime.value = state.clock.elapsedTime;
     simUniforms.uFrame.value = frameCountRef.current;
-    const pixelWidth = size.width * window.devicePixelRatio;
-    const pixelHeight = size.height * window.devicePixelRatio;
     simUniforms.uResolution.value = [pixelWidth, pixelHeight];
     
     // Use initial texture on first frame, otherwise use previous render target
@@ -193,8 +237,9 @@ function WaterRipplePlane({ uniformValues }: WaterRippleSceneProps) {
     gl.render(simulationSceneRef.current, simulationCameraRef.current);
     gl.setRenderTarget(null);
 
-    // Update render shader to use current simulation state
+    // Update render shader to use current simulation state and background texture
     renderMaterialRef.current.uniforms.uSimulationState.value = renderTargets.current.texture;
+    renderMaterialRef.current.uniforms.uBackgroundTexture.value = renderTargets.backgroundRT.texture;
     renderMaterialRef.current.uniforms.uResolution.value = [size.width, size.height];
 
     // Swap buffers for next frame
@@ -207,6 +252,10 @@ function WaterRipplePlane({ uniformValues }: WaterRippleSceneProps) {
 
   return (
     <>
+      {/* Background scene with "wow" text (rendered to texture, positioned behind) */}
+      <group ref={backgroundGroupRef} position={[0, 0, -0.5]}>
+        <BackgroundText />
+      </group>
       {/* Render pass (visible) */}
       <mesh>
         <planeGeometry key={`render-${geometryKey}`} args={[viewport.width, viewport.height, 32, 32]} />

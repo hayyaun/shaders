@@ -6,7 +6,7 @@ interface ShaderStore {
   setSelectedShader: (shader: string) => void;
 }
 
-const VALID_SHADERS = ['Gradient Fog', 'Plasma', 'Aurora', 'Star Glitter', 'Water Ripple'];
+const VALID_SHADERS = ['Gradient Fog', 'Plasma', 'Star Glitter', 'Water Ripple', 'Pointer Line'];
 
 export const useShaderStore = create<ShaderStore>()(
   persist(

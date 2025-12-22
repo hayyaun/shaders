@@ -22,7 +22,7 @@ function BackgroundText() {
       <Text
         position={[0, 0, 0]}
         fontSize={2}
-        color="#1e40af"
+        color="#ffffff"
         anchorX="center"
         anchorY="middle"
       >
